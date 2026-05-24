@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Disease Predictor – AI Symptom Checker</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+
+<!-- ── Noise overlay ─────────────────────────────────────────────────────── -->
+<div class="noise-overlay"></div>
+
+<!-- ── Navigation ────────────────────────────────────────────────────────── -->
+<nav class="navbar navbar-expand-lg">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <span class="brand-icon"><i class="bi bi-activity"></i></span>
+      <span class="brand-text">CureAI<span class="brand-dot">.</span></span>
+    </a>
+    <div class="ms-auto d-flex align-items-center gap-3">
+      <span class="stat-badge"><i class="bi bi-database-fill"></i> {{ disease_count }} Diseases</span>
+      <span class="stat-badge"><i class="bi bi-grid-3x3-gap-fill"></i> {{ symptom_count }} Symptoms</span>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Hero ──────────────────────────────────────────────────────────────── -->
+<section class="hero-section">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-lg-6">
+        <div class="hero-label">AI-POWERED DIAGNOSIS</div>
+        <h1 class="hero-title">
+          Predict diseases<br>from your<br>
+          <span class="gradient-text">symptoms</span>
+        </h1>
+        <p class="hero-subtitle">
+          Select your symptoms below and let three independent machine-learning
+          models Random Forest, Decision Tree, and Naive Bayes analyse your
+          condition and reach a consensus.
+        </p>
+        <div class="model-pills">
+          {% for name, acc in accuracies.items() %}
+          <div class="model-pill">
+            <span class="pill-name">{{ name }}</span>
+            <span class="pill-acc">{{ acc }}%</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="col-lg-6 d-none d-lg-flex justify-content-end">
+        <div class="hero-visual">
+          <div class="pulse-ring ring-1"></div>
+          <div class="pulse-ring ring-2"></div>
+          <div class="pulse-ring ring-3"></div>
+          <div class="hero-icon-wrap">
+            <i class="bi bi-heart-pulse-fill"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Main form ──────────────────────────────────────────────────────────── -->
+<section class="main-section">
+  <div class="container">
+    <div class="row g-4">
+
+      <!-- Symptom selector card -->
+      <div class="col-xl-7">
+        <div class="glass-card symptom-card">
+          <div class="card-header-custom">
+            <div>
+              <h2 class="card-title-custom">Select Symptoms</h2>
+              <p class="card-subtitle-custom">Choose all symptoms you are experiencing</p>
+            </div>
+            <button class="clear-btn" id="clearAll" onclick="clearAllSymptoms()">
+              <i class="bi bi-x-circle"></i> Clear All
+            </button>
+          </div>
+
+          <!-- Search box -->
+          <div class="search-wrap">
+            <i class="bi bi-search search-icon"></i>
+            <input
+              type="text"
+              id="symptomSearch"
+              class="search-input"
+              placeholder="Search symptoms…"
+              oninput="filterSymptoms(this.value)"
+              autocomplete="off"
+            />
+          </div>
+
+          <!-- Selected chips -->
+          <div id="selectedChips" class="selected-chips" style="display:none;">
+            <div class="chips-label">
+              <i class="bi bi-check-circle-fill"></i>
+              Selected: <span id="selectedCount">0</span>
+            </div>
+            <div id="chipContainer" class="chip-container"></div>
+          </div>
+
+          <!-- Symptom grid -->
+          <div id="symptomGrid" class="symptom-grid">
+            {% for key, label in symptoms %}
+            <label class="symptom-item" data-label="{{ label.lower() }}" data-key="{{ key }}">
+              <input type="checkbox" value="{{ key }}" onchange="updateChips()" />
+              <span class="symptom-text">{{ label }}</span>
+              <span class="check-mark"><i class="bi bi-check"></i></span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Predict panel -->
+      <div class="col-xl-5">
+        <div class="glass-card predict-card sticky-top" style="top: 1.5rem;">
+
+          <!-- Empty state -->
+          <div id="emptyState" class="empty-state">
+            <div class="empty-icon"><i class="bi bi-stethoscope"></i></div>
+            <h3>No Symptoms Selected</h3>
+            <p>Select at least one symptom from the list to get your AI-powered diagnosis.</p>
+          </div>
+
+          <!-- Predict button + results -->
+          <div id="predictPanel" style="display:none;">
+            <div class="card-header-custom">
+              <h2 class="card-title-custom">Diagnosis</h2>
+            </div>
+
+            <button class="predict-btn" id="predictBtn" onclick="runPrediction()">
+              <span id="btnText"><i class="bi bi-cpu-fill"></i>&nbsp; Run AI Diagnosis</span>
+              <span id="btnLoader" style="display:none;">
+                <span class="spinner-border spinner-border-sm me-2"></span> Analysing…
+              </span>
+            </button>
+
+            <!-- Error -->
+            <div id="errorBox" class="error-box" style="display:none;"></div>
+
+            <!-- Results -->
+            <div id="resultsBox" style="display:none;">
+
+              <!-- Consensus -->
+              <div class="consensus-box" id="consensusBox">
+                <div class="consensus-label">CONSENSUS DIAGNOSIS</div>
+                <div class="consensus-disease" id="consensusDisease">—</div>
+                <div class="confidence-bar-wrap">
+                  <div class="confidence-bar-track">
+                    <div class="confidence-bar-fill" id="consensusFill"></div>
+                  </div>
+                  <span class="confidence-pct" id="consensusPct">0%</span>
+                </div>
+              </div>
+
+              <!-- Per-model results -->
+              <div class="model-results" id="modelResults"></div>
+
+              <!-- Disclaimer -->
+              <div class="disclaimer">
+                <i class="bi bi-info-circle-fill"></i>
+                This tool is for informational purposes only and does not constitute
+                medical advice. Always consult a qualified healthcare professional.
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ─────────────────────────────────────────────────────────────── -->
+<footer class="site-footer">
+  <div class="container">
+    <span>CureAI &copy; 2026 &nbsp;·&nbsp; Powered by Sophiya, Prabal , Innima &nbsp;·&nbsp; </span>
+  </div>
+</footer>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Custom JS -->
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
