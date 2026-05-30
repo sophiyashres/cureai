@@ -12,7 +12,7 @@ from sklearn.metrics import accuracy_score
 import warnings
 warnings.filterwarnings("ignore")
 
-# ── Paths ────────────────────────────────────────────────────────────────────
+# Paths
 BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
 DATASET_DIR = os.path.join(BASE_DIR, "dataset")
 MODEL_DIR   = os.path.join(BASE_DIR, "models")
@@ -20,7 +20,7 @@ DATA_FILE   = os.path.join(DATASET_DIR, "disease_symptoms.csv")
 
 os.makedirs(MODEL_DIR, exist_ok=True)
 
-# ── Load & clean dataset ─────────────────────────────────────────────────────
+# Load & clean dataset 
 print("Loading dataset ...")
 df = pd.read_csv(DATA_FILE)
 
@@ -40,7 +40,7 @@ all_symptoms = sorted({
 print(f"  Total unique symptoms : {len(all_symptoms)}")
 print(f"  Total diseases        : {df['Disease'].nunique()}")
 
-# ── Build binary feature matrix ──────────────────────────────────────────────
+# Build binary feature matrix 
 print("Building feature matrix ...")
 X = pd.DataFrame(0, index=df.index, columns=all_symptoms)
 for idx, row in df.iterrows():
@@ -49,16 +49,16 @@ for idx, row in df.iterrows():
         if pd.notna(symptom) and symptom in all_symptoms:
             X.at[idx, symptom] = 1
 
-# ── Encode target labels ──────────────────────────────────────────────────────
+# Encode target labels 
 le = LabelEncoder()
 y  = le.fit_transform(df["Disease"])
 
-# ── Train / test split (no stratify – dataset too small per class) ────────────
+# Train / test split (no stratify – dataset too small per class)
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.15, random_state=42
 )
 
-# ── Helper: train, evaluate, save ─────────────────────────────────────────────
+# Helper: train, evaluate, save
 def train_and_save(name, clf, fname):
     print(f"\nTraining {name} ...")
     clf.fit(X_train, y_train)
@@ -84,7 +84,7 @@ def train_and_save(name, clf, fname):
     print(f"  Saved -> {path}")
     return test_acc
 
-# ── Train each model ──────────────────────────────────────────────────────────
+# Train each model 
 rf_acc = train_and_save(
     "Random Forest",
     RandomForestClassifier(n_estimators=100, random_state=42),
@@ -103,7 +103,7 @@ nb_acc = train_and_save(
     "naive_bayes.pkl"
 )
 
-# ── Save shared artefacts ─────────────────────────────────────────────────────
+# Save shared artefacts 
 print("\nSaving symptom list and label encoder ...")
 
 with open(os.path.join(MODEL_DIR, "symptoms.pkl"), "wb") as f:

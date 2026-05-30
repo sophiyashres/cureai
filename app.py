@@ -4,12 +4,12 @@ import numpy as np
 import pandas as pd
 from flask import Flask, render_template, request, jsonify
 
-# ── App setup ─────────────────────────────────────────────────────────────────
+# App setup
 app = Flask(__name__)
 BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(BASE_DIR, "models")
 
-# ── Model / artefact loading ──────────────────────────────────────────────────
+# Model / artefact loading 
 REQUIRED_FILES = [
     "random_forest.pkl",
     "decision_tree.pkl",
@@ -46,7 +46,7 @@ except FileNotFoundError as e:
     print(f"⚠️  {e}")
 
 
-# ── Pretty-print symptom names for the UI ────────────────────────────────────
+# Pretty-print symptom names for the UI 
 def _pretty(symptom: str) -> str:
     """Convert 'burning_micturition' → 'Burning Micturition'."""
     return symptom.replace("_", " ").replace("  ", " ").title()
@@ -54,7 +54,7 @@ def _pretty(symptom: str) -> str:
 SYMPTOM_DISPLAY = {s: _pretty(s) for s in (SYMPTOMS if MODELS_LOADED else [])}
 
 
-# ── Routes ────────────────────────────────────────────────────────────────────
+# Routes
 @app.route("/")
 def index():
     """Render the main prediction page."""
@@ -173,7 +173,7 @@ def get_symptoms():
     })
 
 
-# ── Entry point ───────────────────────────────────────────────────────────────
+# Entry point 
 if __name__ == "__main__":
     print("Starting Disease Predictor on http://127.0.0.1:5000")
     app.run(debug=True, host="127.0.0.1", port=5000)
