@@ -1,12 +1,3 @@
-"""
-train_model.py
---------------
-Trains three ML models (Random Forest, Decision Tree, Naive Bayes) on
-disease-symptom data and saves them to the models/ directory using pickle.
-
-Run once before starting the Flask app:
-    python train_model.py
-"""
 
 import os
 import pickle

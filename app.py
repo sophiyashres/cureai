@@ -1,15 +1,3 @@
-"""
-app.py
-------
-Flask application for Disease Prediction from Symptoms.
-Loads pre-trained ML models (Random Forest, Decision Tree, Naive Bayes)
-and serves a modern web UI for symptom-based disease prediction.
-
-Start with:
-    python app.py
-Then visit: http://127.0.0.1:5000
-"""
-
 import os
 import pickle
 import numpy as np
